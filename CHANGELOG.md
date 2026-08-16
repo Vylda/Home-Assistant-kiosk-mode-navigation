@@ -1,0 +1,18 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is loosely based on [Keep a Changelog](https://keepachangelog.com/)
+and this project follows [Semantic Versioning](https://semver.org/).
+
+## [1.0.0] - 2026-08-16
+
+### Added
+
+- Initial public release of the `kiosk-nav` component.
+- Automatic loading of views from the current Lovelace dashboard.
+- Navigation buttons with Home Assistant icon support.
+- Active item highlighting based on the current URL.
+- Separately loaded `kiosk-nav.css` stylesheet.
+- Home Assistant installation documentation.
+- MIT License.

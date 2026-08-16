@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+a {
+  flex: 0 1 200px;
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 48px;
+  padding: 8px 16px;
+
+  border-radius: var(--ha-card-border-radius, 12px);
+
+  background: var(--card-background-color);
+  color: var(--primary-text-color);
+
+  text-decoration: none;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  box-sizing: border-box;
+
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &[data-active] {
+    background: var(--primary-color);
+    color: var(--text-primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+ha-icon {
+  --mdc-icon-size: 24px;
+}
