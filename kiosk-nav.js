@@ -24,6 +24,8 @@ class KioskNav extends HTMLElement {
     this.setDrawerOpen(false);
   };
 
+  static TRANSITION_DURATION_MS = 250;
+  static TRANSITION_FALLBACK_MS = 50;
   static VERSION = '1.1.0';
   static logged = false;
   static stylesheet = null;
@@ -159,20 +161,13 @@ class KioskNav extends HTMLElement {
       : path.replace(/\/+$/, '');
   }
 
-  static parseCssTime(time) {
-    const value = Number.parseFloat(time);
-
-    if (Number.isNaN(value)) {
-      return 0;
-    }
-
-    return time.trim().endsWith('ms')
-      ? value
-      : value * 1000;
-  }
-
   constructor() {
     super();
+
+    this.style.setProperty(
+      '--kiosk-nav-transition-duration',
+      `${KioskNav.TRANSITION_DURATION_MS}ms`,
+    );
 
     this.items = [];
     this.linkMap = new Map();
@@ -415,18 +410,7 @@ class KioskNav extends HTMLElement {
   }
 
   waitForDrawerTransition() {
-    if (!this.drawer) {
-      return Promise.resolve();
-    }
-
-    const style = window.getComputedStyle(this.drawer);
-    const durations = style.transitionDuration.split(',').map(KioskNav.parseCssTime);
-    const delays = style.transitionDelay.split(',').map(KioskNav.parseCssTime);
-    const transitionMs = Math.max(
-      ...durations.map((duration, index) => duration + (delays[index] ?? delays[0] ?? 0)),
-    );
-
-    if (transitionMs === 0) {
+    if (!this.drawer || KioskNav.TRANSITION_DURATION_MS === 0) {
       return Promise.resolve();
     }
 
@@ -452,7 +436,7 @@ class KioskNav extends HTMLElement {
       };
 
       this.drawer.addEventListener('transitionend', handleTransitionEnd);
-      window.setTimeout(finish, transitionMs + 50);
+      window.setTimeout(finish, KioskNav.TRANSITION_DURATION_MS + KioskNav.TRANSITION_FALLBACK_MS);
     });
   }
 
