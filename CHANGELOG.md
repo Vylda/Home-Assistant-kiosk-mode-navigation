@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/)
 and this project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-08-17
+
+### Added
+
+- Drawer and hidden nav support
+
+### Fixed
+
+- console style
+
 ## [1.0.0] - 2026-08-16
 
 ### Added

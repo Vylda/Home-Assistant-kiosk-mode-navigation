@@ -4,20 +4,30 @@ class KioskNav extends HTMLElement {
     this.updateActiveItem();
   };
 
-  static VERSION = '1.0.0';
+  handleDrawerToggle = () => {
+    this.setDrawerOpen(!this.isOpen);
+  };
+
+  handleOutsidePointerDown = (event) => {
+    if (event.composedPath().includes(this)) {
+      return;
+    }
+
+    this.setDrawerOpen(false);
+  };
+
+  handleKeyDown = (event) => {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    this.setDrawerOpen(false);
+  };
+
+  static VERSION = '1.1.0';
   static logged = false;
   static stylesheet = null;
   static stylesheetUrl = new URL('kiosk-nav.css', import.meta.url);
-
-  static normalizePath(path) {
-    if (typeof path !== 'string' || path === '') {
-      return '/';
-    }
-
-    return path === '/'
-      ? '/'
-      : path.replace(/\/+$/, '');
-  }
 
   static async loadStylesheet() {
     if (KioskNav.stylesheet) {
@@ -42,9 +52,9 @@ class KioskNav extends HTMLElement {
   static logInfo(items) {
     const lines = [
       {
-        content: "≡ kiosk-nav",
-        background: "#12dba9",
-        color: "#111",
+        content: '≡ kiosk-nav',
+        background: '#12dba9',
+        color: '#111',
       },
       {
         content: `version ${KioskNav.VERSION}`,
@@ -60,37 +70,40 @@ class KioskNav extends HTMLElement {
     const maxLength = Math.max(...lines.map(({ content }) => content.length));
 
     const baseStyle = {
-      "border-color": "#424242",
-      "border-style": "solid",
-      display: "inline-block",
-      "font-family": "monospace",
-      "font-size": "12px",
+      'border-color': '#424242',
+      'border-style': 'solid',
+      display: 'inline-block',
+      'font-family': 'monospace',
+      'font-size': '12px',
+      'white-space': 'pre',
     };
 
     const styleToString = (style) => Object.entries(style)
       .map(([property, value]) => `${property}: ${value}`)
-      .join("; ");
+      .join('; ');
 
     lines.forEach(
       (
         {
           content,
-          background = "white",
-          color = "#424242",
+          background = 'white',
+          color = '#424242',
         },
         index,
       ) => {
         const isFirstLine = index === 0;
         const isLastLine = index === lastIndex;
 
-        const endTypo = isFirstLine ? '⋮' : ' ';
+        const endTypo = isFirstLine ? '⋮' : '\u00a0';
+
+        const padding = '\u00a0'.repeat(maxLength - content.length);
 
         output.push(
-          `%c${content.padEnd(maxLength)}%c${endTypo}%c`,
+          `%c${content}${padding}%c${endTypo}%c`,
         );
 
         if (!isLastLine) {
-          output.push("\n");
+          output.push('\n');
         }
 
         const leftBorderWidth = isFirstLine
@@ -129,11 +142,33 @@ class KioskNav extends HTMLElement {
           }),
         );
 
-        styles.push("");
+        styles.push('');
       },
     );
 
     console.info(output.join(''), ...styles);
+  }
+
+  static normalizePath(path) {
+    if (typeof path !== 'string' || path === '') {
+      return '/';
+    }
+
+    return path === '/'
+      ? '/'
+      : path.replace(/\/+$/, '');
+  }
+
+  static parseCssTime(time) {
+    const value = Number.parseFloat(time);
+
+    if (Number.isNaN(value)) {
+      return 0;
+    }
+
+    return time.trim().endsWith('ms')
+      ? value
+      : value * 1000;
   }
 
   constructor() {
@@ -141,6 +176,11 @@ class KioskNav extends HTMLElement {
 
     this.items = [];
     this.linkMap = new Map();
+    this.drawer = null;
+    this.toggleButton = null;
+    this.toggleIcon = null;
+    this.nav = null;
+    this.isOpen = false;
     this.lovelaceConfig = null;
     this.lovelaceConfigPromise = null;
 
@@ -157,6 +197,13 @@ class KioskNav extends HTMLElement {
     if (!this.lovelaceConfig && !this.lovelaceConfigPromise) {
       this.lovelaceConfigPromise = this.loadLovelaceConfig();
     }
+  }
+
+  addDrawerEventListeners() {
+    window.addEventListener('pointerdown', this.handleOutsidePointerDown, {
+      capture: true,
+    });
+    window.addEventListener('keydown', this.handleKeyDown);
   }
 
   connectedCallback() {
@@ -183,6 +230,8 @@ class KioskNav extends HTMLElement {
       'popstate',
       this.handleLocationChanged,
     );
+
+    this.removeDrawerEventListeners();
   }
 
   async loadLovelaceConfig() {
@@ -215,13 +264,23 @@ class KioskNav extends HTMLElement {
     }
   }
 
-  navigate(event, path) {
+  async navigate(event, path) {
     event.preventDefault();
 
     const normalizedPath = KioskNav.normalizePath(path);
 
     if (this.currentPath === normalizedPath) {
+      this.setDrawerOpen(false);
+
       return;
+    }
+
+    const wasOpen = this.isOpen;
+
+    this.setDrawerOpen(false);
+
+    if (wasOpen) {
+      await this.waitForDrawerTransition();
     }
 
     window.history.pushState(null, '', normalizedPath);
@@ -235,13 +294,39 @@ class KioskNav extends HTMLElement {
     );
   }
 
+  removeDrawerEventListeners() {
+    window.removeEventListener('pointerdown', this.handleOutsidePointerDown, {
+      capture: true,
+    });
+    window.removeEventListener('keydown', this.handleKeyDown);
+  }
+
   async render() {
     try {
       const { items } = this;
+      const navId  = 'kiosk-nav-items';
 
       this.linkMap.clear();
 
+      const drawer = document.createElement('div');
+      drawer.classList.add('drawer');
+
+      const toggleButton = document.createElement('button');
+      toggleButton.classList.add('handle');
+      toggleButton.type = 'button';
+      toggleButton.addEventListener('click', this.handleDrawerToggle);
+
+      const toggleIcon = document.createElement('ha-icon');
+      toggleIcon.classList.add('handle-icon');
+      toggleIcon.setAttribute('icon', 'mdi:chevron-up');
+
+      const toggleText = document.createElement('span');
+      toggleText.textContent = 'Navigace';
+      toggleButton.append(toggleIcon, toggleText);
+      toggleButton.setAttribute('aria-controls', navId);
+
       const nav = document.createElement('nav');
+      nav.id = navId;
 
       items.forEach(({ icon, label, path }) => {
         const link = document.createElement('a');
@@ -270,10 +355,18 @@ class KioskNav extends HTMLElement {
         nav.append(link);
       });
 
+      drawer.append(toggleButton, nav);
+
       const stylesheet = await KioskNav.loadStylesheet();
       this.shadowRoot.adoptedStyleSheets = [stylesheet];
-      this.shadowRoot.replaceChildren(nav);
+      this.shadowRoot.replaceChildren(drawer);
 
+      this.drawer = drawer;
+      this.toggleButton = toggleButton;
+      this.toggleIcon = toggleIcon;
+      this.nav = nav;
+
+      this.updateDrawerState();
       this.updateActiveItem();
     } catch (error) {
       this.renderError(error);
@@ -298,6 +391,15 @@ class KioskNav extends HTMLElement {
     this.config = config;
   }
 
+  setDrawerOpen(isOpen) {
+    if (this.isOpen === isOpen) {
+      return;
+    }
+
+    this.isOpen = isOpen;
+    this.updateDrawerState();
+  }
+
   updateActiveItem() {
     this.linkMap.forEach((link, path) => {
       const isActive = KioskNav.normalizePath(path) === this.currentPath;
@@ -310,6 +412,73 @@ class KioskNav extends HTMLElement {
         link.removeAttribute('aria-current');
       }
     });
+  }
+
+  waitForDrawerTransition() {
+    if (!this.drawer) {
+      return Promise.resolve();
+    }
+
+    const style = window.getComputedStyle(this.drawer);
+    const durations = style.transitionDuration.split(',').map(KioskNav.parseCssTime);
+    const delays = style.transitionDelay.split(',').map(KioskNav.parseCssTime);
+    const transitionMs = Math.max(
+      ...durations.map((duration, index) => duration + (delays[index] ?? delays[0] ?? 0)),
+    );
+
+    if (transitionMs === 0) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      let isResolved = false;
+
+      const finish = () => {
+        if (isResolved) {
+          return;
+        }
+
+        isResolved = true;
+        this.drawer.removeEventListener('transitionend', handleTransitionEnd);
+        resolve();
+      };
+
+      const handleTransitionEnd = (event) => {
+        if (event.target !== this.drawer || event.propertyName !== 'transform') {
+          return;
+        }
+
+        finish();
+      };
+
+      this.drawer.addEventListener('transitionend', handleTransitionEnd);
+      window.setTimeout(finish, transitionMs + 50);
+    });
+  }
+
+  updateDrawerState() {
+    if (!this.drawer || !this.toggleButton || !this.toggleIcon || !this.nav) {
+      return;
+    }
+
+    this.drawer.toggleAttribute('data-open', this.isOpen);
+
+    if (this.isOpen) {
+      this.addDrawerEventListeners();
+    } else {
+      this.removeDrawerEventListeners();
+    }
+
+    this.nav.toggleAttribute('inert', !this.isOpen);
+    this.nav.setAttribute('aria-hidden', String(!this.isOpen));
+
+    this.toggleButton.setAttribute('aria-expanded', String(this.isOpen));
+    this.toggleButton.setAttribute(
+      'aria-label',
+      this.isOpen ? 'Close navigation' : 'Open navigation',
+    );
+
+    this.toggleButton.title = this.isOpen ? 'Close navigation' : 'Open navigation';
   }
 }
 

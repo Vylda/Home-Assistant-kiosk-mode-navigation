@@ -1,33 +1,131 @@
 :host {
+  --kiosk-nav-active-background: var(--primary-color, #03a9f4);
+  --kiosk-nav-active-color: var(--text-primary-color, #fff);
+  --kiosk-nav-background-alpha: 75%;
+  --kiosk-nav-border-radius: var(--ha-card-border-radius, 12px);
+  --kiosk-nav-box-shadow: var(--ha-card-box-shadow, 0 -2px 8px rgba(0, 0, 0, 0.18));
+  --kiosk-nav-focus-color: var(--primary-color, #03a9f4);
+  --kiosk-nav-gap: 8px;
+  --kiosk-nav-handle-background: var(--primary-color, #03a9f4);
+  --kiosk-nav-handle-color: var(--text-primary-color, #fff);
+  --kiosk-nav-handle-icon-size: 22px;
+  --kiosk-nav-handle-min-height: 44px;
+  --kiosk-nav-handle-padding: 8px 16px;
+  --kiosk-nav-icon-size: 24px;
+  --kiosk-nav-item-background: var(--secondary-background-color, var(--card-background-color, #fff));
+  --kiosk-nav-item-color: var(--primary-text-color, #212121);
+  --kiosk-nav-item-min-height: 48px;
+  --kiosk-nav-item-padding: 8px 16px;
+  --kiosk-nav-item-width: 200px;
+  --kiosk-nav-panel-background: var(--card-background-color, #fff);
+  --kiosk-nav-panel-max-height: 50vh;
+  --kiosk-nav-panel-padding: 16px;
+  --kiosk-nav-transition-duration: 250ms;
+  --kiosk-nav-transition-timing-function: ease-out;
+  --kiosk-nav-z-index: 10;
+
   display: block;
   width: 100%;
 }
 
+.drawer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--kiosk-nav-z-index);
+
+  transform: translateY(100%);
+  transition: transform var(--kiosk-nav-transition-duration) var(--kiosk-nav-transition-timing-function);
+
+  pointer-events: none;
+}
+
+.drawer[data-open] {
+  transform: translateY(0);
+}
+
+.handle {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+
+  min-height: var(--kiosk-nav-handle-min-height);
+  padding: var(--kiosk-nav-handle-padding);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kiosk-nav-gap);
+
+  transform: translateX(-50%);
+
+  border: 0;
+  border-radius: var(--kiosk-nav-border-radius) var(--kiosk-nav-border-radius) 0 0;
+
+  background: var(--kiosk-nav-handle-background);
+  background: color-mix(in srgb,
+      var(--kiosk-nav-handle-background) var(--kiosk-nav-background-alpha),
+      transparent);
+  color: var(--kiosk-nav-handle-color);
+
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+
+  box-shadow: var(--kiosk-nav-box-shadow);
+
+  box-sizing: border-box;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus-visible {
+    outline: 2px solid var(--kiosk-nav-focus-color);
+    outline-offset: 2px;
+  }
+}
+
+
 nav {
+  max-height: var(--kiosk-nav-panel-max-height);
+  padding: var(--kiosk-nav-panel-padding);
+
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--kiosk-nav-gap);
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  background: var(--kiosk-nav-panel-background);
+  background: color-mix(in srgb,
+      var(--kiosk-nav-panel-background) var(--kiosk-nav-background-alpha),
+      transparent);
+  box-shadow: var(--kiosk-nav-box-shadow);
+
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 a {
-  flex: 0 1 200px;
-  min-height: 48px;
+  flex: 0 1 var(--kiosk-nav-item-width);
+  min-height: var(--kiosk-nav-item-min-height);
+  padding: var(--kiosk-nav-item-padding);
 
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--kiosk-nav-gap);
 
-  min-height: 48px;
-  padding: 8px 16px;
+  border-radius: var(--kiosk-nav-border-radius);
 
-  border-radius: var(--ha-card-border-radius, 12px);
-
-  background: var(--card-background-color);
-  color: var(--primary-text-color);
+  background: var(--kiosk-nav-item-background);
+  color: var(--kiosk-nav-item-color);
 
   text-decoration: none;
 
@@ -35,26 +133,34 @@ a {
   font-weight: 500;
 
   box-sizing: border-box;
-
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-
   cursor: pointer;
+  touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
 
   &[data-active] {
-    background: var(--primary-color);
-    color: var(--text-primary-color);
+    background: var(--kiosk-nav-active-background);
+    color: var(--kiosk-nav-active-color);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--kiosk-nav-focus-color);
     outline-offset: 2px;
   }
 }
 
 ha-icon {
-  --mdc-icon-size: 24px;
+  --mdc-icon-size: var(--kiosk-nav-icon-size);
+}
+
+.handle-icon {
+  --mdc-icon-size: var(--kiosk-nav-handle-icon-size);
+
+  transform: scaleY(1);
+  transform-origin: center;
+  transition: transform var(--kiosk-nav-transition-duration) var(--kiosk-nav-transition-timing-function);
+}
+
+.drawer[data-open] .handle-icon {
+  transform: scaleY(-1);
 }
