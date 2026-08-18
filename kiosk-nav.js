@@ -26,7 +26,7 @@ class KioskNav extends HTMLElement {
 
   static TRANSITION_DURATION_MS = 250;
   static TRANSITION_FALLBACK_MS = 50;
-  static VERSION = '1.1.0';
+  static VERSION = '1.1.2';
   static logged = false;
   static stylesheet = null;
   static stylesheetUrl = new URL('kiosk-nav.css', import.meta.url);
@@ -164,11 +164,6 @@ class KioskNav extends HTMLElement {
   constructor() {
     super();
 
-    this.style.setProperty(
-      '--kiosk-nav-transition-duration',
-      `${KioskNav.TRANSITION_DURATION_MS}ms`,
-    );
-
     this.items = [];
     this.linkMap = new Map();
     this.drawer = null;
@@ -202,6 +197,11 @@ class KioskNav extends HTMLElement {
   }
 
   connectedCallback() {
+    this.style.setProperty(
+      '--kiosk-nav-transition-duration',
+      `${KioskNav.TRANSITION_DURATION_MS}ms`,
+    );
+
     window.addEventListener(
       'location-changed',
       this.handleLocationChanged,
@@ -380,7 +380,7 @@ class KioskNav extends HTMLElement {
 
   setConfig(config) {
     if (!config) {
-      throw new Error(`Unable to load stylesheet ${KioskNav.stylesheetUrl.href}: ${response.status}`);
+      throw new Error('Kiosk Nav requires a card configuration.');
     }
 
     this.config = config;

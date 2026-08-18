@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/)
 and this project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-08-18
+
+### Fixed
+
+- Moved host style attribute updates out of the custom element constructor for stricter Android WebView compatibility.
+- Fixed the missing-card-configuration error message.
+
 ## [1.1.1] - 2026-08-17
 
 ### Changed
