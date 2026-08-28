@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/)
 and this project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-08-28
+
+### Added
+
+- Optional `kiosk-tweaks.js` helper for Android app kiosk setups.
+- Automatic return to the first dashboard view after user inactivity.
+- Documented the optional kiosk tweaks Lovelace resource and its more-info dialog behavior.
+
 ## [1.1.2] - 2026-08-18
 
 ### Fixed

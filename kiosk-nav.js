@@ -24,9 +24,18 @@ class KioskNav extends HTMLElement {
     this.setDrawerOpen(false);
   };
 
+  handleUserActivity = () => {
+    this.resetInactivityTimer();
+  };
+
+  handleInactivityTimeout = () => {
+    this.returnToFirstItem();
+  };
+
   static TRANSITION_DURATION_MS = 250;
   static TRANSITION_FALLBACK_MS = 50;
-  static VERSION = '1.1.2';
+  static INACTIVITY_DELAY_MS = 300000; // 5 minutes
+  static VERSION = '1.2.0';
   static logged = false;
   static stylesheet = null;
   static stylesheetUrl = new URL('kiosk-nav.css', import.meta.url);
@@ -173,6 +182,7 @@ class KioskNav extends HTMLElement {
     this.isOpen = false;
     this.lovelaceConfig = null;
     this.lovelaceConfigPromise = null;
+    this.inactivityTimer = null;
 
     this.attachShadow({ mode: 'open' });
   }
@@ -196,6 +206,16 @@ class KioskNav extends HTMLElement {
     window.addEventListener('keydown', this.handleKeyDown);
   }
 
+  addInactivityEventListeners() {
+    window.addEventListener('pointerdown', this.handleUserActivity, {
+      passive: true,
+    });
+    window.addEventListener('wheel', this.handleUserActivity, {
+      passive: true,
+    });
+    window.addEventListener('keydown', this.handleUserActivity);
+  }
+
   connectedCallback() {
     this.style.setProperty(
       '--kiosk-nav-transition-duration',
@@ -212,6 +232,9 @@ class KioskNav extends HTMLElement {
       this.handleLocationChanged,
     );
 
+    this.addInactivityEventListeners();
+    this.resetInactivityTimer();
+
     this.updateActiveItem();
   }
 
@@ -227,6 +250,9 @@ class KioskNav extends HTMLElement {
     );
 
     this.removeDrawerEventListeners();
+    this.removeInactivityEventListeners();
+
+    this.clearInactivityTimer();
   }
 
   async loadLovelaceConfig() {
@@ -262,6 +288,12 @@ class KioskNav extends HTMLElement {
   async navigate(event, path) {
     event.preventDefault();
 
+    this.resetInactivityTimer();
+
+    await this.navigateToPath(path);
+  }
+
+  async navigateToPath(path, { replace = false } = {}) {
     const normalizedPath = KioskNav.normalizePath(path);
 
     if (this.currentPath === normalizedPath) {
@@ -278,12 +310,16 @@ class KioskNav extends HTMLElement {
       await this.waitForDrawerTransition();
     }
 
-    window.history.pushState(null, '', normalizedPath);
+    if (replace) {
+      window.history.replaceState(null, '', normalizedPath);
+    } else {
+      window.history.pushState(null, '', normalizedPath);
+    }
 
     window.dispatchEvent(
       new CustomEvent('location-changed', {
         detail: {
-          replace: false,
+          replace,
         },
       }),
     );
@@ -294,6 +330,12 @@ class KioskNav extends HTMLElement {
       capture: true,
     });
     window.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  removeInactivityEventListeners() {
+    window.removeEventListener('pointerdown', this.handleUserActivity);
+    window.removeEventListener('keydown', this.handleUserActivity);
+    window.removeEventListener('wheel', this.handleUserActivity);
   }
 
   async render() {
@@ -363,6 +405,7 @@ class KioskNav extends HTMLElement {
 
       this.updateDrawerState();
       this.updateActiveItem();
+      this.resetInactivityTimer();
     } catch (error) {
       this.renderError(error);
     }
@@ -376,6 +419,40 @@ class KioskNav extends HTMLElement {
     message.textContent = `Kiosk Nav error: ${error.message}`;
 
     this.shadowRoot.replaceChildren(message);
+  }
+
+  async returnToFirstItem() {
+    const firstItem = this.items[0];
+
+    if (!firstItem) {
+      this.resetInactivityTimer();
+
+      return;
+    }
+
+    await this.navigateToPath(firstItem.path, {
+      replace: true,
+    });
+
+    this.resetInactivityTimer();
+  }
+
+  clearInactivityTimer() {
+    window.clearTimeout(this.inactivityTimer);
+    this.inactivityTimer = null;
+  }
+
+  resetInactivityTimer() {
+    this.clearInactivityTimer();
+
+    if (!this.isConnected || KioskNav.INACTIVITY_DELAY_MS <= 0) {
+      return;
+    }
+
+    this.inactivityTimer = window.setTimeout(
+      this.handleInactivityTimeout,
+      KioskNav.INACTIVITY_DELAY_MS,
+    );
   }
 
   setConfig(config) {
